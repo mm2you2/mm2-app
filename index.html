@@ -264,11 +264,13 @@
     }
 
     function resetData() {
-        if (confirm('Сбросить все данные за месяц?')) {
-            try { tg.CloudStorage.removeItem(STORAGE_KEY); } catch (e) {}
-            localStorage.removeItem(STORAGE_KEY);
-            location.reload();
-        }
+        tg.showConfirm('Сбросить все данные за месяц?', (ok) => {
+            if (ok) {
+                try { tg.CloudStorage.removeItem(STORAGE_KEY); } catch (e) {}
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            }
+        });
     }
 
     function loadData(saved) {
