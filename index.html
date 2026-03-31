@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MM2</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --neon-green: #00ff66;
+            --neon-red: #ff4d4d;
+            --glass-bg: rgba(10, 10, 10, 0.9);
+            --border: rgba(255, 255, 255, 0.08);
+            --glow: 0 0 15px rgba(0, 255, 102, 0.5);
+            --glow-red: 0 0 15px rgba(255, 77, 77, 0.5);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: -apple-system, 'Inter', 'Segoe UI', sans-serif;
+            padding: 10px;
+            overflow-x: hidden;
+            user-select: none;
+            background-image:
+                radial-gradient(circle at 50% 50%, rgba(0, 255, 102, 0.05) 0%, transparent 80%),
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            opacity: 0;
+            transform: scale(0.98);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        body.loaded { opacity: 1; transform: scale(1); }
+        input, button { user-select: text; }
+
+        .currency-toggle {
+            display: flex; gap: 6px; justify-content: center; margin-bottom: 15px;
+            background: rgba(255,255,255,0.03); padding: 4px; border-radius: 12px; border: 1px solid var(--border);
+        }
+        .curr-btn {
+            flex: 1; padding: 8px; border-radius: 9px; border: 1px solid transparent; background: transparent;
+            color: #444; font-weight: 900; font-size: 11px; cursor: pointer; transition: var(--transition);
+            text-transform: uppercase; text-align: center;
+        }
+        .curr-btn:hover { color: #888; }
+        .curr-btn.active { background: var(--neon-green); color: #000; box-shadow: var(--glow); border-color: var(--neon-green); }
+
+        .periods { display: flex; gap: 8px; margin-bottom: 12px; }
+        .card { flex: 1; background: var(--glass-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .card-header { text-align: center; font-weight: 900; font-size: 8px; padding: 8px; color: #444; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+
+        .row {
+            display: flex; height: 28px; align-items: center; padding: 0 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.02); transition: var(--transition);
+        }
+        .row.today { background: rgba(0, 255, 102, 0.05); border-left: 2px solid var(--neon-green); }
+        .day { width: 22px; flex-shrink: 0; color: #333; font-size: 9px; font-weight: 800; }
+        .row.today .day { color: var(--neon-green); }
+
+        .row input {
+            flex: 1; width: 100%; border: none; background: transparent; color: #fff;
+            text-align: right; font-size: 13px; font-weight: 900; outline: none;
+        }
+        .row input:focus { color: var(--neon-green); text-shadow: var(--glow); }
+
+        .goal-block {
+            background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px;
+            border: 1px solid var(--border); margin-bottom: 12px;
+        }
+        .goal-block .label { font-size: 7px; color: #444; letter-spacing: 2px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; }
+        .goal-block input {
+            width: 100%; border: none; background: transparent; color: #fff;
+            font-size: 20px; font-weight: 900; outline: none;
+        }
+        .progress-bar { width: 100%; height: 4px; background: #111; margin-top: 8px; border-radius: 2px; overflow: hidden; }
+        #progress-fill { height: 100%; background: var(--neon-green); box-shadow: var(--glow); transition: 1s ease-in-out; width: 0%; }
+        .milestones { display: flex; gap: 3px; margin-top: 6px; flex-wrap: wrap; }
+        .dot { width: 4px; height: 4px; border-radius: 50%; background: #1a1a1a; transition: all 0.5s ease; }
+        .dot.active { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+        #goal-remaining { font-size: 8px; color: #666; margin-top: 6px; text-transform: uppercase; }
+
+        .rate-widget {
+            font-size: 9px; color: #555; font-weight: 800;
+            background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px;
+            display: flex; justify-content: space-between; border: 1px solid var(--border);
+            margin-bottom: 12px;
+        }
+        .highlight { color: var(--neon-green); }
+
+        .stat-block {
+            border-left: 2px solid var(--border); padding: 8px 12px; margin-bottom: 10px;
+            transition: var(--transition);
+        }
+        .stat-block.main-total { border-left: 3px solid var(--neon-green); background: rgba(0, 255, 102, 0.02); border-radius: 0 12px 12px 0; }
+        .label { font-size: 7px; color: #444; letter-spacing: 2px; font-weight: 800; margin-bottom: 3px; text-transform: uppercase; }
+        .val { font-size: 28px; font-weight: 900; color: var(--neon-green); line-height: 1; }
+        .sub-stats { margin-top: 4px; display: flex; gap: 12px; }
+        .sub-item { font-size: 9px; color: #555; font-weight: 700; }
+        .pace { color: #888; font-size: 8px; }
+
+        .btn-reset {
+            width: 100%; margin-top: 15px; background: transparent; color: #333; border: 1px solid #1a1a1a;
+            padding: 12px; border-radius: 10px; cursor: pointer; font-size: 9px;
+            font-weight: 900; text-transform: uppercase; transition: var(--transition);
+        }
+        .btn-reset:hover { border-color: var(--neon-red); color: var(--neon-red); }
+    </style>
+</head>
+<body>
+
+    <div class="currency-toggle">
+        <button class="curr-btn" id="btn-usd" onclick="setCurrency('USD')">USD $</button>
+        <button class="curr-btn" id="btn-rub" onclick="setCurrency('RUB')">RUB ₽</button>
+    </div>
+
+    <div class="goal-block">
+        <div class="label">Цель (<span class="unit">$</span>)</div>
+        <input id="target-val" type="text" inputmode="decimal" placeholder="7000" oninput="calc()" ondblclick="this.value='';calc()">
+        <div class="progress-bar"><div id="progress-fill"></div></div>
+        <div id="milestones" class="milestones"></div>
+        <div id="goal-remaining">Осталось: 0</div>
+    </div>
+
+    <div class="rate-widget">
+        <span>КУРС ЦБ:</span>
+        <span class="highlight">1$ = <span id="current-rate">0.00</span>₽</span>
+    </div>
+
+    <div class="periods">
+        <div class="card"><div class="card-header">Период I</div><div id="col1"></div></div>
+        <div class="card"><div class="card-header">Период II</div><div id="col2"></div></div>
+    </div>
+
+    <div class="stat-block">
+        <div class="label">1 - 15 число</div>
+        <div class="val"><span class="unit">$</span><span id="s1">0</span></div>
+        <div class="sub-stats">
+            <div class="sub-item">20%: <span id="p1" class="highlight">0</span></div>
+            <div class="pace">Темп: <span id="pace1">0</span>/день</div>
+        </div>
+    </div>
+
+    <div class="stat-block main-total">
+        <div class="label">Итого за месяц</div>
+        <div class="val"><span class="unit">$</span><span id="st">0</span></div>
+        <div class="sub-stats">
+            <div class="sub-item">Чистая прибыль: <span id="pt" class="highlight">0</span></div>
+            <div class="pace">Общий темп: <span id="paceT">0</span>/день</div>
+        </div>
+    </div>
+
+    <div class="stat-block">
+        <div class="label">16 - 31 число</div>
+        <div class="val"><span class="unit">$</span><span id="s2">0</span></div>
+        <div class="sub-stats">
+            <div class="sub-item">20%: <span id="p2" class="highlight">0</span></div>
+            <div class="pace">Темп: <span id="pace2">0</span>/день</div>
+        </div>
+    </div>
+
+    <button class="btn-reset" onclick="resetData()">Очистить цикл</button>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+    tg.setHeaderColor('#000000');
+    tg.setBackgroundColor('#000000');
+
+    let currentCurrency = 'USD';
+    let rubRate = 92.5;
+    const today = new Date().getDate();
+    const STORAGE_KEY = 'mm2_data';
+
+    function createRows() {
+        const c1 = document.getElementById('col1'), c2 = document.getElementById('col2');
+        for (let i = 1; i <= 31; i++) {
+            const isToday = i === today ? 'today' : '';
+            const html = `
+                <div class="row ${isToday}" onclick="document.getElementById('v${i}').focus()">
+                    <div class="day">${i}</div>
+                    <input id="v${i}" type="text" inputmode="decimal" data-idx="${i}" placeholder="—"
+                           oninput="calc()" onfocus="this.select()" ondblclick="this.value='';calc()">
+                </div>`;
+            if (i <= 15) c1.innerHTML += html; else c2.innerHTML += html;
+        }
+    }
+
+    function calc() {
+        let sum1 = 0, sum2 = 0, d1 = 0, d2 = 0;
+        let targetInput = document.getElementById('target-val');
+        let rawData = { values: {}, target: targetInput.value, currency: currentCurrency };
+
+        for (let i = 1; i <= 31; i++) {
+            const input = document.getElementById('v' + i);
+            if (input) {
+                const val = parseFloat(input.value.replace(',', '.')) || 0;
+                if (i <= 15) { sum1 += val; if (val > 0) d1++; }
+                else { sum2 += val; if (val > 0) d2++; }
+                rawData.values[i] = input.value;
+            }
+        }
+
+        const totalUSD = sum1 + sum2;
+        const targetUSD = parseFloat(rawData.target) || 7000;
+        const mult = currentCurrency === 'RUB' ? rubRate : 1;
+        const unit = currentCurrency === 'USD' ? '$' : '₽';
+        const f = (v) => (v * mult).toLocaleString('ru-RU', { maximumFractionDigits: 0 });
+
+        document.getElementById('s1').innerText = f(sum1);
+        document.getElementById('p1').innerText = f(sum1 * 0.2);
+        document.getElementById('pace1').innerText = unit + f(d1 > 0 ? sum1 / d1 : 0);
+        document.getElementById('s2').innerText = f(sum2);
+        document.getElementById('p2').innerText = f(sum2 * 0.2);
+        document.getElementById('pace2').innerText = unit + f(d2 > 0 ? sum2 / d2 : 0);
+        document.getElementById('st').innerText = f(totalUSD);
+        document.getElementById('pt').innerText = f(totalUSD * 0.2);
+        document.getElementById('paceT').innerText = unit + f((d1 + d2) > 0 ? totalUSD / (d1 + d2) : 0);
+
+        const rem = Math.max(targetUSD - totalUSD, 0);
+        document.getElementById('goal-remaining').innerText = `Осталось: ${unit}${f(rem)}`;
+        const progress = Math.min((totalUSD / targetUSD) * 100, 100);
+        document.getElementById('progress-fill').style.width = (progress || 0) + '%';
+
+        const mc = document.getElementById('milestones');
+        mc.innerHTML = '';
+        for (let m = 500; m <= targetUSD; m += 500) {
+            const dot = document.createElement('div');
+            dot.className = totalUSD >= m ? 'dot active' : 'dot';
+            mc.appendChild(dot);
+        }
+
+        // Сохраняем в Telegram CloudStorage
+        try {
+            tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(rawData));
+        } catch (e) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData));
+        }
+    }
+
+    async function fetchRate() {
+        try {
+            const res = await fetch('https://open.er-api.com/v6/latest/USD');
+            const data = await res.json();
+            if (data?.rates?.RUB) {
+                rubRate = data.rates.RUB;
+                document.getElementById('current-rate').innerText = rubRate.toFixed(2);
+                calc();
+            }
+        } catch (e) {}
+    }
+
+    function setCurrency(curr) {
+        currentCurrency = curr;
+        document.querySelectorAll('.curr-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + curr.toLowerCase()).classList.add('active');
+        document.querySelectorAll('.unit').forEach(u => u.innerText = curr === 'USD' ? '$' : '₽');
+        calc();
+    }
+
+    function resetData() {
+        if (confirm('Сбросить все данные за месяц?')) {
+            try { tg.CloudStorage.removeItem(STORAGE_KEY); } catch (e) {}
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload();
+        }
+    }
+
+    function loadData(saved) {
+        if (saved.target) document.getElementById('target-val').value = saved.target;
+        if (saved.currency) currentCurrency = saved.currency;
+        for (let i = 1; i <= 31; i++) {
+            if (saved.values && saved.values[i]) {
+                const input = document.getElementById('v' + i);
+                if (input) input.value = saved.values[i];
+            }
+        }
+        setCurrency(currentCurrency);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.idx) {
+            const next = document.getElementById('v' + (parseInt(e.target.dataset.idx) + 1));
+            if (next) { next.focus(); next.select(); }
+        }
+    });
+
+    window.onload = () => {
+        createRows();
+        fetchRate();
+
+        // Загружаем из Telegram CloudStorage или localStorage
+        try {
+            tg.CloudStorage.getItem(STORAGE_KEY, (err, val) => {
+                if (val) {
+                    loadData(JSON.parse(val));
+                } else {
+                    const local = localStorage.getItem(STORAGE_KEY);
+                    if (local) loadData(JSON.parse(local));
+                    else setCurrency('USD');
+                }
+                setTimeout(() => document.body.classList.add('loaded'), 100);
+            });
+        } catch (e) {
+            const local = localStorage.getItem(STORAGE_KEY);
+            if (local) loadData(JSON.parse(local));
+            else setCurrency('USD');
+            setTimeout(() => document.body.classList.add('loaded'), 100);
+        }
+    };
+</script>
+</body>
+</html>
