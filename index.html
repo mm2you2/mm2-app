@@ -7,97 +7,138 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --neon-green: #00ff66;
-            --neon-red: #ff4d4d;
-            --glass-bg: rgba(10, 10, 10, 0.9);
+            --accent: #00ff66;
+            --accent-dim: #009933;
+            --accent-glow: 0 0 15px rgba(0, 255, 102, 0.5);
+            --bg: #000;
+            --card-bg: rgba(10, 10, 10, 0.9);
             --border: rgba(255, 255, 255, 0.08);
-            --glow: 0 0 15px rgba(0, 255, 102, 0.5);
-            --glow-red: 0 0 15px rgba(255, 77, 77, 0.5);
+            --text: #fff;
+            --dim: #444;
+            --red: #ff4d4d;
+            --grid1: rgba(255, 255, 255, 0.03);
+            --radial: rgba(0, 255, 102, 0.05);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background: #000;
-            color: #fff;
+            background: var(--bg); color: var(--text);
             font-family: -apple-system, 'Inter', 'Segoe UI', sans-serif;
-            padding: 10px;
-            overflow-x: hidden;
-            user-select: none;
+            padding: 10px; overflow-x: hidden; user-select: none;
             background-image:
-                radial-gradient(circle at 50% 50%, rgba(0, 255, 102, 0.05) 0%, transparent 80%),
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                radial-gradient(circle at 50% 50%, var(--radial) 0%, transparent 80%),
+                linear-gradient(var(--grid1) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid1) 1px, transparent 1px);
             background-size: 100% 100%, 30px 30px, 30px 30px;
-            opacity: 0;
-            transform: scale(0.98);
-            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            opacity: 0; transform: scale(0.98);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out, background 0.5s, color 0.5s;
         }
         body.loaded { opacity: 1; transform: scale(1); }
+        body.no-grid { background-image: none; }
         input, button { user-select: text; }
 
+        /* Settings gear */
+        .settings-btn {
+            position: fixed; top: 12px; left: 12px; z-index: 200;
+            width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(0,0,0,0.6); cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: var(--transition); backdrop-filter: blur(10px);
+        }
+        .settings-btn:hover { border-color: var(--accent); }
+        .settings-btn svg { width: 16px; height: 16px; fill: var(--dim); transition: var(--transition); }
+        .settings-btn:hover svg { fill: var(--accent); }
+
+        /* Settings overlay */
+        .settings-overlay {
+            position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(20px); display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .settings-overlay.open { display: flex; opacity: 1; }
+        .settings-panel {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px;
+            padding: 24px; width: 90%; max-width: 340px;
+        }
+        .settings-title {
+            font-size: 11px; font-weight: 900; color: var(--dim); text-transform: uppercase;
+            letter-spacing: 2px; margin-bottom: 16px; text-align: center;
+        }
+        .theme-grid { display: flex; flex-direction: column; gap: 8px; }
+        .theme-option {
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            border-radius: 10px; border: 1px solid var(--border); cursor: pointer;
+            transition: var(--transition); background: transparent;
+        }
+        .theme-option:hover { background: rgba(255,255,255,0.03); }
+        .theme-option.active { border-color: var(--accent); background: rgba(255,255,255,0.05); }
+        .theme-dot {
+            width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .theme-name { font-size: 13px; font-weight: 800; color: var(--text); }
+        .theme-close {
+            margin-top: 16px; width: 100%; padding: 10px; border-radius: 10px;
+            border: 1px solid var(--border); background: transparent; color: var(--dim);
+            font-weight: 900; font-size: 10px; text-transform: uppercase; cursor: pointer;
+            transition: var(--transition);
+        }
+        .theme-close:hover { border-color: var(--accent); color: var(--accent); }
+
+        .top-bar { display: flex; align-items: center; justify-content: center; margin-bottom: 15px; padding: 0 36px; }
         .currency-toggle {
-            display: flex; gap: 6px; justify-content: center; margin-bottom: 15px;
+            display: flex; gap: 6px; justify-content: center;
             background: rgba(255,255,255,0.03); padding: 4px; border-radius: 12px; border: 1px solid var(--border);
         }
         .curr-btn {
-            flex: 1; padding: 8px; border-radius: 9px; border: 1px solid transparent; background: transparent;
-            color: #444; font-weight: 900; font-size: 11px; cursor: pointer; transition: var(--transition);
+            padding: 8px 20px; border-radius: 9px; border: 1px solid transparent; background: transparent;
+            color: var(--dim); font-weight: 900; font-size: 11px; cursor: pointer; transition: var(--transition);
             text-transform: uppercase; text-align: center;
         }
-        .curr-btn:hover { color: #888; }
-        .curr-btn.active { background: var(--neon-green); color: #000; box-shadow: var(--glow); border-color: var(--neon-green); }
+        .curr-btn.active { background: var(--accent); color: var(--bg); box-shadow: var(--accent-glow); border-color: var(--accent); }
 
         .periods { display: flex; gap: 8px; margin-bottom: 12px; }
-        .card { flex: 1; background: var(--glass-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-        .card-header { text-align: center; font-weight: 900; font-size: 8px; padding: 8px; color: #444; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+        .card { flex: 1; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .card-header { text-align: center; font-weight: 900; font-size: 8px; padding: 8px; color: var(--dim); border-bottom: 1px solid var(--border); text-transform: uppercase; }
 
         .row {
             display: flex; height: 28px; align-items: center; padding: 0 8px;
             border-bottom: 1px solid rgba(255,255,255,0.02); transition: var(--transition);
         }
-        .row.today { background: rgba(0, 255, 102, 0.05); border-left: 2px solid var(--neon-green); }
-        .day { width: 22px; flex-shrink: 0; color: #333; font-size: 9px; font-weight: 800; }
-        .row.today .day { color: var(--neon-green); }
-
+        .row.today { background: color-mix(in srgb, var(--accent) 5%, transparent); border-left: 2px solid var(--accent); }
+        .day { width: 22px; flex-shrink: 0; color: var(--dim); font-size: 9px; font-weight: 800; }
+        .row.today .day { color: var(--accent); }
         .row input {
-            flex: 1; width: 100%; border: none; background: transparent; color: #fff;
+            flex: 1; width: 100%; border: none; background: transparent; color: var(--text);
             text-align: right; font-size: 13px; font-weight: 900; outline: none;
         }
-        .row input:focus { color: var(--neon-green); text-shadow: var(--glow); }
+        .row input:focus { color: var(--accent); text-shadow: var(--accent-glow); }
 
         .goal-block {
             background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px;
             border: 1px solid var(--border); margin-bottom: 12px;
         }
-        .goal-block .label { font-size: 7px; color: #444; letter-spacing: 2px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; }
-        .goal-block input {
-            width: 100%; border: none; background: transparent; color: #fff;
-            font-size: 20px; font-weight: 900; outline: none;
-        }
+        .goal-block .label { font-size: 7px; color: var(--dim); letter-spacing: 2px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; }
+        .goal-block input { width: 100%; border: none; background: transparent; color: var(--text); font-size: 20px; font-weight: 900; outline: none; }
         .progress-bar { width: 100%; height: 4px; background: #111; margin-top: 8px; border-radius: 2px; overflow: hidden; }
-        #progress-fill { height: 100%; background: var(--neon-green); box-shadow: var(--glow); transition: 1s ease-in-out; width: 0%; }
+        #progress-fill { height: 100%; background: var(--accent); box-shadow: var(--accent-glow); transition: 1s ease-in-out; width: 0%; }
         .milestones { display: flex; gap: 3px; margin-top: 6px; flex-wrap: wrap; }
         .dot { width: 4px; height: 4px; border-radius: 50%; background: #1a1a1a; transition: all 0.5s ease; }
-        .dot.active { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+        .dot.active { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
         #goal-remaining { font-size: 8px; color: #666; margin-top: 6px; text-transform: uppercase; }
 
         .rate-widget {
             font-size: 9px; color: #555; font-weight: 800;
             background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px;
-            display: flex; justify-content: space-between; border: 1px solid var(--border);
-            margin-bottom: 12px;
+            display: flex; justify-content: space-between; border: 1px solid var(--border); margin-bottom: 12px;
         }
-        .highlight { color: var(--neon-green); }
+        .highlight { color: var(--accent); }
 
-        .stat-block {
-            border-left: 2px solid var(--border); padding: 8px 12px; margin-bottom: 10px;
-            transition: var(--transition);
-        }
-        .stat-block.main-total { border-left: 3px solid var(--neon-green); background: rgba(0, 255, 102, 0.02); border-radius: 0 12px 12px 0; }
-        .label { font-size: 7px; color: #444; letter-spacing: 2px; font-weight: 800; margin-bottom: 3px; text-transform: uppercase; }
-        .val { font-size: 28px; font-weight: 900; color: var(--neon-green); line-height: 1; }
+        .stat-block { border-left: 2px solid var(--border); padding: 8px 12px; margin-bottom: 10px; transition: var(--transition); }
+        .stat-block.main-total { border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 3%, transparent); border-radius: 0 12px 12px 0; }
+        .label { font-size: 7px; color: var(--dim); letter-spacing: 2px; font-weight: 800; margin-bottom: 3px; text-transform: uppercase; }
+        .val { font-size: 28px; font-weight: 900; color: var(--accent); line-height: 1; }
         .sub-stats { margin-top: 4px; display: flex; gap: 12px; }
         .sub-item { font-size: 9px; color: #555; font-weight: 700; }
         .pace { color: #888; font-size: 8px; }
@@ -107,14 +148,28 @@
             padding: 12px; border-radius: 10px; cursor: pointer; font-size: 9px;
             font-weight: 900; text-transform: uppercase; transition: var(--transition);
         }
-        .btn-reset:hover { border-color: var(--neon-red); color: var(--neon-red); }
+        .btn-reset:hover { border-color: var(--red); color: var(--red); }
     </style>
 </head>
 <body>
 
-    <div class="currency-toggle">
-        <button class="curr-btn" id="btn-usd" onclick="setCurrency('USD')">USD $</button>
-        <button class="curr-btn" id="btn-rub" onclick="setCurrency('RUB')">RUB ₽</button>
+    <button class="settings-btn" onclick="toggleSettings()">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
+    </button>
+
+    <div class="settings-overlay" id="settingsOverlay" onclick="if(event.target===this)toggleSettings()">
+        <div class="settings-panel">
+            <div class="settings-title">Theme</div>
+            <div class="theme-grid" id="themeGrid"></div>
+            <button class="theme-close" onclick="toggleSettings()">Close</button>
+        </div>
+    </div>
+
+    <div class="top-bar">
+        <div class="currency-toggle">
+            <button class="curr-btn" id="btn-usd" onclick="setCurrency('USD')">USD $</button>
+            <button class="curr-btn" id="btn-rub" onclick="setCurrency('RUB')">RUB ₽</button>
+        </div>
     </div>
 
     <div class="goal-block">
@@ -168,9 +223,100 @@
     const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
-    tg.setHeaderColor('#000000');
-    tg.setBackgroundColor('#000000');
 
+    // ── Themes ────────────────────────────────────────────
+    const THEMES = {
+        neon: {
+            name: "Neon Green", dot: "#00ff66", headerBg: "#000000",
+            vars: {
+                "--accent": "#00ff66", "--accent-dim": "#009933",
+                "--accent-glow": "0 0 15px rgba(0,255,102,0.5)",
+                "--bg": "#000", "--card-bg": "rgba(10,10,10,0.9)",
+                "--border": "rgba(255,255,255,0.08)", "--text": "#fff", "--dim": "#444",
+                "--grid1": "rgba(255,255,255,0.03)", "--radial": "rgba(0,255,102,0.05)"
+            }, grid: true
+        },
+        bw: {
+            name: "B&W", dot: "#ffffff", headerBg: "#000000",
+            vars: {
+                "--accent": "#ffffff", "--accent-dim": "#888888",
+                "--accent-glow": "0 0 10px rgba(255,255,255,0.3)",
+                "--bg": "#000", "--card-bg": "rgba(15,15,15,0.9)",
+                "--border": "rgba(255,255,255,0.1)", "--text": "#fff", "--dim": "#555",
+                "--grid1": "transparent", "--radial": "transparent"
+            }, grid: false
+        },
+        violet: {
+            name: "Violet", dot: "#b464ff", headerBg: "#08050f",
+            vars: {
+                "--accent": "#b464ff", "--accent-dim": "#7840b4",
+                "--accent-glow": "0 0 15px rgba(180,100,255,0.5)",
+                "--bg": "#08050f", "--card-bg": "rgba(14,10,22,0.9)",
+                "--border": "rgba(180,100,255,0.1)", "--text": "#f0ebff", "--dim": "#46405a",
+                "--grid1": "rgba(180,100,255,0.03)", "--radial": "rgba(180,100,255,0.05)"
+            }, grid: true
+        },
+        gold: {
+            name: "Gold", dot: "#ffc832", headerBg: "#080805",
+            vars: {
+                "--accent": "#ffc832", "--accent-dim": "#b48c1e",
+                "--accent-glow": "0 0 15px rgba(255,200,50,0.5)",
+                "--bg": "#080805", "--card-bg": "rgba(15,14,10,0.9)",
+                "--border": "rgba(255,200,50,0.1)", "--text": "#fffaf0", "--dim": "#5a503c",
+                "--grid1": "rgba(255,200,50,0.03)", "--radial": "rgba(255,200,50,0.05)"
+            }, grid: true
+        },
+        cyan: {
+            name: "Cyan", dot: "#00dcff", headerBg: "#03080c",
+            vars: {
+                "--accent": "#00dcff", "--accent-dim": "#0082a0",
+                "--accent-glow": "0 0 15px rgba(0,220,255,0.5)",
+                "--bg": "#03080c", "--card-bg": "rgba(8,14,20,0.9)",
+                "--border": "rgba(0,220,255,0.1)", "--text": "#e6f5ff", "--dim": "#324b5a",
+                "--grid1": "rgba(0,220,255,0.03)", "--radial": "rgba(0,220,255,0.05)"
+            }, grid: true
+        }
+    };
+
+    let currentTheme = 'neon';
+
+    function applyTheme(id) {
+        const theme = THEMES[id];
+        if (!theme) return;
+        currentTheme = id;
+        const root = document.documentElement;
+        for (const [k, v] of Object.entries(theme.vars)) root.style.setProperty(k, v);
+        document.body.classList.toggle('no-grid', !theme.grid);
+        try {
+            tg.setHeaderColor(theme.headerBg);
+            tg.setBackgroundColor(theme.headerBg);
+        } catch(e) {}
+        // Update active state
+        document.querySelectorAll('.theme-option').forEach(el => {
+            el.classList.toggle('active', el.dataset.theme === id);
+        });
+        localStorage.setItem('mm2_theme', id);
+    }
+
+    function buildThemeGrid() {
+        const grid = document.getElementById('themeGrid');
+        grid.innerHTML = '';
+        for (const [id, theme] of Object.entries(THEMES)) {
+            const el = document.createElement('div');
+            el.className = `theme-option${id === currentTheme ? ' active' : ''}`;
+            el.dataset.theme = id;
+            el.innerHTML = `<div class="theme-dot" style="background:${theme.dot}"></div><div class="theme-name">${theme.name}</div>`;
+            el.onclick = () => applyTheme(id);
+            grid.appendChild(el);
+        }
+    }
+
+    function toggleSettings() {
+        const overlay = document.getElementById('settingsOverlay');
+        overlay.classList.toggle('open');
+    }
+
+    // ── App Logic ────────────────────────────────────────
     let currentCurrency = 'USD';
     let rubRate = 92.5;
     const today = new Date().getDate();
@@ -234,9 +380,7 @@
             mc.appendChild(dot);
         }
 
-        // Всегда сохраняем в localStorage (мгновенно)
         localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData));
-        // Плюс в CloudStorage с debounce
         clearTimeout(window._saveTimer);
         window._saveTimer = setTimeout(() => {
             try { tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(rawData)); } catch (e) {}
@@ -295,23 +439,25 @@
         }
     });
 
-    // Сохраняем при закрытии/сворачивании (но не при сбросе)
     window.addEventListener('beforeunload', () => { if (!isResetting) calc(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden && !isResetting) calc(); });
 
     window.onload = () => {
         createRows();
+        buildThemeGrid();
         fetchRate();
 
-        // Загружаем сначала из localStorage (мгновенно)
+        // Load theme
+        const savedTheme = localStorage.getItem('mm2_theme') || 'neon';
+        applyTheme(savedTheme);
+
+        // Load data
         const local = localStorage.getItem(STORAGE_KEY);
         if (local) {
             try { loadData(JSON.parse(local)); } catch(e) {}
         } else {
             setCurrency('USD');
         }
-
-        // Потом пробуем CloudStorage (может быть свежее с другого устройства)
         try {
             tg.CloudStorage.getItem(STORAGE_KEY, (err, val) => {
                 if (val && val !== local) {
