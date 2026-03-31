@@ -234,12 +234,13 @@
             mc.appendChild(dot);
         }
 
-        // Сохраняем в Telegram CloudStorage
-        try {
-            tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(rawData));
-        } catch (e) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData));
-        }
+        // Всегда сохраняем в localStorage (мгновенно)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData));
+        // Плюс в CloudStorage с debounce
+        clearTimeout(window._saveTimer);
+        window._saveTimer = setTimeout(() => {
+            try { tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(rawData)); } catch (e) {}
+        }, 500);
     }
 
     async function fetchRate() {
@@ -289,28 +290,32 @@
         }
     });
 
+    // Сохраняем при закрытии/сворачивании
+    window.addEventListener('beforeunload', () => calc());
+    document.addEventListener('visibilitychange', () => { if (document.hidden) calc(); });
+
     window.onload = () => {
         createRows();
         fetchRate();
 
-        // Загружаем из Telegram CloudStorage или localStorage
+        // Загружаем сначала из localStorage (мгновенно)
+        const local = localStorage.getItem(STORAGE_KEY);
+        if (local) {
+            try { loadData(JSON.parse(local)); } catch(e) {}
+        } else {
+            setCurrency('USD');
+        }
+
+        // Потом пробуем CloudStorage (может быть свежее с другого устройства)
         try {
             tg.CloudStorage.getItem(STORAGE_KEY, (err, val) => {
-                if (val) {
-                    loadData(JSON.parse(val));
-                } else {
-                    const local = localStorage.getItem(STORAGE_KEY);
-                    if (local) loadData(JSON.parse(local));
-                    else setCurrency('USD');
+                if (val && val !== local) {
+                    try { loadData(JSON.parse(val)); } catch(e) {}
                 }
-                setTimeout(() => document.body.classList.add('loaded'), 100);
             });
-        } catch (e) {
-            const local = localStorage.getItem(STORAGE_KEY);
-            if (local) loadData(JSON.parse(local));
-            else setCurrency('USD');
-            setTimeout(() => document.body.classList.add('loaded'), 100);
-        }
+        } catch (e) {}
+
+        setTimeout(() => document.body.classList.add('loaded'), 100);
     };
 </script>
 </body>
