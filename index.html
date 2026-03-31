@@ -263,9 +263,12 @@
         calc();
     }
 
+    let isResetting = false;
+
     function resetData() {
         tg.showConfirm('Сбросить все данные за месяц?', (ok) => {
             if (ok) {
+                isResetting = true;
                 try { tg.CloudStorage.removeItem(STORAGE_KEY); } catch (e) {}
                 localStorage.removeItem(STORAGE_KEY);
                 location.reload();
@@ -292,9 +295,9 @@
         }
     });
 
-    // Сохраняем при закрытии/сворачивании
-    window.addEventListener('beforeunload', () => calc());
-    document.addEventListener('visibilitychange', () => { if (document.hidden) calc(); });
+    // Сохраняем при закрытии/сворачивании (но не при сбросе)
+    window.addEventListener('beforeunload', () => { if (!isResetting) calc(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden && !isResetting) calc(); });
 
     window.onload = () => {
         createRows();
