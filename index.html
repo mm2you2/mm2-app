@@ -467,7 +467,15 @@
                 isResetting = true;
                 try { tg.CloudStorage.removeItem(STORAGE_KEY); } catch (e) {}
                 localStorage.removeItem(STORAGE_KEY);
-                location.reload();
+                // Очищаем все поля вручную
+                for (let i = 1; i <= 31; i++) {
+                    const input = document.getElementById('v' + i);
+                    if (input) input.value = '';
+                }
+                document.getElementById('target-val').value = '';
+                isResetting = false;
+                calc();
+                tg.showAlert('Данные сброшены');
             }
         });
     }
