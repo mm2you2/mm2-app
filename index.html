@@ -318,6 +318,55 @@
         overlay.classList.toggle('open');
     }
 
+    // ── API Sync ─────────────────────────────────────────
+    const API_URL = 'https://89e4d0d0e28672.lhr.life';
+    let userId = null;
+    try { userId = tg.initDataUnsafe?.user?.id; } catch(e) {}
+
+    async function syncFromServer() {
+        if (!userId) return;
+        try {
+            const res = await fetch(`${API_URL}/api/data?user_id=${userId}`, {signal: AbortSignal.timeout(3000)});
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data && data.values) {
+                const saved = { values: data.values, target: data.target || "", currency: data.currency || "USD" };
+                loadData(saved);
+                // Обновляем localStorage свежими данными с сервера
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+            }
+            if (data.rate) { rubRate = data.rate; document.getElementById('current-rate').innerText = rubRate.toFixed(2); }
+        } catch(e) { console.log('API sync failed, using local'); }
+    }
+
+    async function syncToServer() {
+        if (!userId) return;
+        try {
+            const targetInput = document.getElementById('target-val');
+            const payload = { user_id: userId };
+            for (let i = 1; i <= 31; i++) {
+                const input = document.getElementById('v' + i);
+                if (input && input.value) {
+                    const val = parseFloat(input.value.replace(',', '.')) || 0;
+                    if (val !== 0) {
+                        await fetch(`${API_URL}/api/data`, {
+                            method: 'POST', headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({user_id: userId, day: i, amount: val}),
+                            signal: AbortSignal.timeout(2000)
+                        });
+                    }
+                }
+            }
+            if (targetInput.value) {
+                await fetch(`${API_URL}/api/data`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: userId, target: targetInput.value, currency: currentCurrency}),
+                    signal: AbortSignal.timeout(2000)
+                });
+            }
+        } catch(e) {}
+    }
+
     // ── App Logic ────────────────────────────────────────
     let currentCurrency = 'USD';
     let rubRate = 92.5;
@@ -386,7 +435,8 @@
         clearTimeout(window._saveTimer);
         window._saveTimer = setTimeout(() => {
             try { tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(rawData)); } catch (e) {}
-        }, 500);
+            syncToServer();
+        }, 1000);
     }
 
     async function fetchRate() {
@@ -453,20 +503,16 @@
         const savedTheme = localStorage.getItem('mm2_theme') || 'neon';
         applyTheme(savedTheme);
 
-        // Load data
+        // Load data: сначала localStorage, потом API (свежее)
         const local = localStorage.getItem(STORAGE_KEY);
         if (local) {
             try { loadData(JSON.parse(local)); } catch(e) {}
         } else {
             setCurrency('USD');
         }
-        try {
-            tg.CloudStorage.getItem(STORAGE_KEY, (err, val) => {
-                if (val && val !== local) {
-                    try { loadData(JSON.parse(val)); } catch(e) {}
-                }
-            });
-        } catch (e) {}
+
+        // Синхронизируем с сервером (подтягиваем данные из группы)
+        syncFromServer().then(() => calc());
 
         setTimeout(() => document.body.classList.add('loaded'), 100);
     };
