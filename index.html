@@ -151,10 +151,98 @@
             font-weight: 900; text-transform: uppercase; transition: var(--transition);
         }
         .btn-reset:hover { border-color: var(--red); color: var(--red); }
+
+        /* Bottom navigation */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+            display: flex; background: rgba(0,0,0,0.95); border-top: 1px solid var(--border);
+            backdrop-filter: blur(20px); padding-bottom: env(safe-area-inset-bottom, 0);
+        }
+        .nav-tab {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px 0; cursor: pointer; transition: var(--transition);
+            border: none; background: none; color: var(--dim); font-size: 9px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 1px; gap: 4px;
+        }
+        .nav-tab.active { color: var(--accent); }
+        .nav-tab svg { width: 20px; height: 20px; fill: currentColor; }
+        .nav-tab:active { transform: scale(0.95); }
+
+        .page { display: none; padding-bottom: 60px; }
+        .page.active { display: block; }
+
+        /* Translate page */
+        .translate-container { padding: 0; }
+        .translate-direction {
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            margin-bottom: 15px;
+        }
+        .lang-name {
+            font-size: 12px; font-weight: 900; color: var(--dim);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .lang-name.active-lang { color: var(--accent); }
+        .swap-dir {
+            width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+            background: var(--card-bg); cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: var(--transition); color: var(--accent); font-size: 16px;
+        }
+        .swap-dir:hover { background: var(--accent); color: var(--bg); transform: rotate(180deg); }
+
+        .translate-input-box, .translate-output-box {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+            padding: 14px; margin-bottom: 10px; position: relative;
+        }
+        .translate-label {
+            font-size: 7px; color: var(--dim); font-weight: 800; text-transform: uppercase;
+            letter-spacing: 2px; margin-bottom: 8px;
+        }
+        .translate-input-box textarea {
+            width: 100%; border: none; background: transparent; color: var(--text);
+            font-size: 14px; font-weight: 600; line-height: 1.5; resize: none;
+            outline: none; min-height: 100px; font-family: inherit;
+        }
+        .translate-input-box textarea::placeholder { color: #222; }
+        .translate-output {
+            font-size: 14px; font-weight: 600; line-height: 1.5; color: var(--accent);
+            min-height: 100px; white-space: pre-wrap;
+        }
+        .translate-output.loading { animation: pulse 1.5s infinite; color: var(--dim); }
+        @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+        .translate-actions { display: flex; gap: 8px; }
+        .tr-btn {
+            flex: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--border);
+            background: transparent; color: var(--dim); font-weight: 900; font-size: 10px;
+            text-transform: uppercase; cursor: pointer; transition: var(--transition); letter-spacing: 1px;
+        }
+        .tr-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .tr-btn.primary {
+            background: var(--accent); color: var(--bg); border-color: var(--accent);
+            box-shadow: var(--accent-glow);
+        }
+        .tr-btn.primary:hover { opacity: 0.9; }
+        .tr-btn.primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .char-info { font-size: 8px; color: var(--dim); margin-top: 6px; text-align: right; }
+
+        .tr-history { margin-top: 15px; }
+        .tr-history-title {
+            font-size: 7px; color: var(--dim); font-weight: 800; text-transform: uppercase;
+            letter-spacing: 2px; margin-bottom: 8px;
+        }
+        .tr-history-item {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+            padding: 10px 12px; margin-bottom: 6px;
+        }
+        .tr-history-original { font-size: 11px; color: var(--dim); margin-bottom: 3px; }
+        .tr-history-translated { font-size: 12px; color: var(--accent); font-weight: 700; }
     </style>
 </head>
 <body>
 
+    <!-- MM2 PAGE -->
+    <div class="page active" id="page-mm2">
     <button class="settings-btn" onclick="toggleSettings()">
         <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
     </button>
@@ -220,6 +308,52 @@
     </div>
 
     <button class="btn-reset" onclick="resetData()">Очистить цикл</button>
+    </div>
+
+    <!-- TRANSLATE PAGE -->
+    <div class="page" id="page-translate">
+        <div class="translate-container">
+            <div class="translate-direction">
+                <span class="lang-name active-lang" id="trFromLang">Русский</span>
+                <button class="swap-dir" onclick="swapTranslateDir()">⇄</button>
+                <span class="lang-name" id="trToLang">English</span>
+            </div>
+
+            <div class="translate-input-box">
+                <div class="translate-label">Введите текст</div>
+                <textarea id="trInput" placeholder="Начни печатать..." oninput="updateCharCount()"></textarea>
+                <div class="char-info"><span id="trCharCount">0</span> символов</div>
+            </div>
+
+            <div class="translate-actions">
+                <button class="tr-btn" onclick="clearTranslate()">Очистить</button>
+                <button class="tr-btn primary" id="trBtn" onclick="doTranslateWeb()">Перевести</button>
+                <button class="tr-btn" onclick="copyTranslation()">Копировать</button>
+            </div>
+
+            <div class="translate-output-box">
+                <div class="translate-label">Перевод</div>
+                <div class="translate-output" id="trOutput"></div>
+            </div>
+
+            <div class="tr-history" id="trHistorySection" style="display:none;">
+                <div class="tr-history-title">История</div>
+                <div id="trHistoryList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+        <button class="nav-tab active" id="tab-mm2" onclick="switchTab('mm2')">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.94s4.18 1.36 4.18 3.85c0 1.89-1.44 2.93-3.12 3.19z"/></svg>
+            MM2
+        </button>
+        <button class="nav-tab" id="tab-translate" onclick="switchTab('translate')">
+            <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+            Translate
+        </button>
+    </div>
 
 <script>
     const tg = window.Telegram.WebApp;
@@ -496,6 +630,113 @@
         if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.dataset.idx) {
             const next = document.getElementById('v' + (parseInt(e.target.dataset.idx) + 1));
             if (next) { next.focus(); next.select(); }
+        }
+    });
+
+    // ── Tab Navigation ────────────────────────────────────
+    function switchTab(tab) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('page-' + tab).classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    // ── Translate Logic ─────────────────────────────────────
+    let trDirection = 'ru2en';
+    const trHistory = [];
+
+    function swapTranslateDir() {
+        trDirection = trDirection === 'ru2en' ? 'en2ru' : 'ru2en';
+        const from = document.getElementById('trFromLang');
+        const to = document.getElementById('trToLang');
+        if (trDirection === 'ru2en') {
+            from.textContent = 'Русский'; to.textContent = 'English';
+        } else {
+            from.textContent = 'English'; to.textContent = 'Русский';
+        }
+        from.classList.add('active-lang'); to.classList.remove('active-lang');
+        // Swap content
+        const inp = document.getElementById('trInput');
+        const out = document.getElementById('trOutput');
+        const temp = inp.value;
+        inp.value = out.textContent;
+        out.textContent = temp;
+        updateCharCount();
+    }
+
+    function updateCharCount() {
+        document.getElementById('trCharCount').textContent = document.getElementById('trInput').value.length;
+    }
+
+    function clearTranslate() {
+        document.getElementById('trInput').value = '';
+        document.getElementById('trOutput').textContent = '';
+        updateCharCount();
+    }
+
+    function copyTranslation() {
+        const text = document.getElementById('trOutput').textContent;
+        if (text) {
+            navigator.clipboard.writeText(text);
+            try { tg.showAlert('Скопировано!'); } catch(e) {}
+        }
+    }
+
+    async function doTranslateWeb() {
+        const input = document.getElementById('trInput');
+        const output = document.getElementById('trOutput');
+        const btn = document.getElementById('trBtn');
+        const text = input.value.trim();
+        if (!text) return;
+
+        btn.disabled = true; btn.textContent = '...';
+        output.textContent = 'Переводим...';
+        output.classList.add('loading');
+
+        try {
+            const resp = await fetch(API_URL + '/api/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, direction: trDirection }),
+                signal: AbortSignal.timeout(30000)
+            });
+            const data = await resp.json();
+            if (data.error) {
+                output.textContent = 'Ошибка: ' + data.error;
+            } else {
+                output.textContent = data.result;
+                addTrHistory(text, data.result);
+            }
+        } catch(e) {
+            output.textContent = 'Ошибка соединения';
+        }
+
+        output.classList.remove('loading');
+        btn.disabled = false; btn.textContent = 'Перевести';
+    }
+
+    function addTrHistory(original, translated) {
+        trHistory.unshift({ original, translated });
+        if (trHistory.length > 10) trHistory.pop();
+        const section = document.getElementById('trHistorySection');
+        const list = document.getElementById('trHistoryList');
+        section.style.display = 'block';
+        list.innerHTML = trHistory.map(h => `
+            <div class="tr-history-item">
+                <div class="tr-history-original">${escHtml(h.original)}</div>
+                <div class="tr-history-translated">${escHtml(h.translated)}</div>
+            </div>
+        `).join('');
+    }
+
+    function escHtml(s) {
+        const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+    }
+
+    // Ctrl+Enter to translate
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'Enter' && document.getElementById('page-translate').classList.contains('active')) {
+            e.preventDefault(); doTranslateWeb();
         }
     });
 
