@@ -880,7 +880,7 @@
     }
 
     // ── OFW Password ────────────────────────────────────────
-    let ofwUnlocked = false;
+    let ofwUnlocked = localStorage.getItem('ofwUnlocked') === 'true';
     const OFW_PASS = '7951scars999';
 
     function showPassPrompt() {
@@ -900,6 +900,7 @@
         const inp = document.getElementById('passInput');
         if (inp.value === OFW_PASS) {
             ofwUnlocked = true;
+            localStorage.setItem('ofwUnlocked', 'true');
             hidePassPrompt();
             switchTab('ofw');
         } else {
