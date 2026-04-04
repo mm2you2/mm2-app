@@ -306,52 +306,15 @@
         }
         .pass-cancel:hover { border-color: var(--accent); color: var(--accent); }
 
-        /* OFW Chat */
-        .chat-container {
-            display: flex; flex-direction: column; height: calc(100vh - 120px);
+        /* OFW Admin */
+        .ofw-admin {
+            padding: 20px 0;
         }
-        .chat-header {
-            text-align: center; padding: 10px; font-size: 10px; font-weight: 900;
-            color: var(--dim); text-transform: uppercase; letter-spacing: 2px;
-            border-bottom: 1px solid var(--border);
+        .ofw-admin-title {
+            text-align: center; font-size: 12px; font-weight: 900; color: var(--accent);
+            text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px;
+            text-shadow: var(--accent-glow);
         }
-        .chat-messages {
-            flex: 1; overflow-y: auto; padding: 12px; display: flex;
-            flex-direction: column; gap: 10px;
-        }
-        .chat-msg {
-            max-width: 85%; padding: 10px 14px; border-radius: 14px;
-            font-size: 13px; line-height: 1.5; word-wrap: break-word;
-        }
-        .chat-msg.user {
-            align-self: flex-end; background: var(--accent); color: var(--bg);
-            font-weight: 700; border-bottom-right-radius: 4px;
-        }
-        .chat-msg.bot {
-            align-self: flex-start; background: var(--card-bg); color: var(--text);
-            border: 1px solid var(--border); border-bottom-left-radius: 4px;
-        }
-        .chat-msg.bot.loading { color: var(--dim); animation: pulse 1.5s infinite; }
-        .chat-input-bar {
-            display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--border);
-            background: rgba(0,0,0,0.5); backdrop-filter: blur(10px);
-        }
-        .chat-input {
-            flex: 1; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--border);
-            background: var(--card-bg); color: var(--text); font-size: 13px; font-weight: 600;
-            outline: none; font-family: inherit; transition: var(--transition);
-        }
-        .chat-input:focus { border-color: var(--accent); }
-        .chat-input::placeholder { color: #333; }
-        .chat-send {
-            width: 44px; height: 44px; border-radius: 12px; border: none;
-            background: var(--accent); color: var(--bg); cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: var(--transition); flex-shrink: 0;
-        }
-        .chat-send:hover { opacity: 0.9; }
-        .chat-send:disabled { opacity: 0.3; cursor: not-allowed; }
-        .chat-send svg { width: 18px; height: 18px; fill: currentColor; }
     </style>
 </head>
 <body>
@@ -395,17 +358,8 @@
 
     <!-- OFW PAGE -->
     <div class="page" id="page-ofw">
-        <div class="chat-container">
-            <div class="chat-header">OFW Assistant</div>
-            <div class="chat-messages" id="chatMessages">
-                <div class="chat-msg bot">Yo, I'm your private assistant. Ask me anything.</div>
-            </div>
-            <div class="chat-input-bar">
-                <input class="chat-input" id="chatInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}">
-                <button class="chat-send" id="chatSendBtn" onclick="sendChat()">
-                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                </button>
-            </div>
+        <div class="ofw-admin">
+            <div class="ofw-admin-title">OFW Admin Panel</div>
         </div>
     </div>
 
@@ -849,59 +803,6 @@
             setTimeout(() => inp.classList.remove('wrong'), 400);
             inp.value = '';
         }
-    }
-
-    // ── OFW Chat ─────────────────────────────────────────────
-    const chatHistory = [];
-
-    async function sendChat() {
-        const input = document.getElementById('chatInput');
-        const btn = document.getElementById('chatSendBtn');
-        const text = input.value.trim();
-        if (!text) return;
-
-        // Add user message
-        chatHistory.push({ role: 'user', content: text });
-        appendChatMsg(text, 'user');
-        input.value = '';
-        btn.disabled = true;
-
-        // Loading
-        const loadingEl = appendChatMsg('...', 'bot loading');
-
-        try {
-            const resp = await fetch(API_URL + '/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: chatHistory }),
-                signal: AbortSignal.timeout(60000)
-            });
-            const data = await resp.json();
-            loadingEl.remove();
-
-            if (data.error) {
-                appendChatMsg('Error: ' + data.error, 'bot');
-            } else {
-                chatHistory.push({ role: 'assistant', content: data.reply });
-                appendChatMsg(data.reply, 'bot');
-            }
-        } catch(e) {
-            loadingEl.remove();
-            appendChatMsg('Connection error', 'bot');
-        }
-
-        btn.disabled = false;
-        input.focus();
-    }
-
-    function appendChatMsg(text, cls) {
-        const container = document.getElementById('chatMessages');
-        const el = document.createElement('div');
-        el.className = 'chat-msg ' + cls;
-        el.textContent = text;
-        container.appendChild(el);
-        container.scrollTop = container.scrollHeight;
-        return el;
     }
 
     // ── Translate Logic ─────────────────────────────────────
