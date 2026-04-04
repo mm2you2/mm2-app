@@ -433,16 +433,19 @@
                 <div class="ofw-section-title">Вставь чат или опиши ситуацию</div>
                 <textarea class="ofw-textarea" id="ofwInput" placeholder="Вставь сообщения фана, опиши ситуацию, фетиши, buying power, что хочешь продать..."></textarea>
 
-                <div class="ofw-img-area" id="ofwImgArea" style="display:none; margin-top:10px;">
+                <div style="margin-top:10px;">
+                    <label class="ofw-btn ofw-btn-secondary" style="display:block; text-align:center; cursor:pointer; padding:10px;">
+                        📷 Добавить скриншот
+                        <input type="file" id="ofwFileInput" accept="image/*" multiple style="display:none;" onchange="ofwHandleFiles(this.files)">
+                    </label>
+                </div>
+
+                <div class="ofw-img-area" id="ofwImgArea" style="display:none; margin-top:8px;">
                     <div style="display:flex; flex-wrap:wrap; gap:6px;" id="ofwImgPreviews"></div>
                 </div>
 
                 <div class="ofw-btn-row">
                     <button class="ofw-btn ofw-btn-secondary" onclick="ofwClear()">Очистить</button>
-                    <label class="ofw-btn ofw-btn-secondary" style="text-align:center; cursor:pointer;">
-                        📷 Скрин
-                        <input type="file" id="ofwFileInput" accept="image/*" multiple style="display:none;" onchange="ofwHandleFiles(this.files)">
-                    </label>
                     <button class="ofw-btn ofw-btn-primary" id="ofwAnalyzeBtn" onclick="ofwAnalyze()">Анализ</button>
                     <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyResult()">Копировать</button>
                 </div>
