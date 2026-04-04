@@ -452,10 +452,12 @@
             <div class="ofw-result" id="ofwResult">
                 <div class="ofw-result-label">Результат</div>
                 <div class="ofw-result-text" id="ofwResultText"></div>
-                <div class="ofw-btn-row" style="margin-top:10px;">
-                    <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyPaste()">Копировать пасту</button>
-                    <button class="ofw-btn ofw-btn-primary" id="ofwMoreBtn" onclick="ofwMore()">Ещё</button>
-                    <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyAll()">Копировать всё</button>
+                <div style="margin-top:10px;">
+                    <div class="ofw-btn-row">
+                        <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyPaste()">Копировать пасту</button>
+                        <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyAll()">Копировать всё</button>
+                    </div>
+                    <button class="ofw-btn ofw-btn-primary" id="ofwMoreBtn" onclick="ofwMore()" style="width:100%; margin-top:8px;">Ещё</button>
                 </div>
             </div>
             <div class="ofw-history" id="ofwHistory" style="display:none;">
