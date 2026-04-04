@@ -237,12 +237,60 @@
         }
         .tr-history-original { font-size: 11px; color: var(--dim); margin-bottom: 3px; }
         .tr-history-translated { font-size: 12px; color: var(--accent); font-weight: 700; }
+
+        /* Home screen */
+        .home-screen {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 80vh; gap: 20px; padding: 20px;
+        }
+        .home-title {
+            font-size: 24px; font-weight: 900; color: var(--accent);
+            text-shadow: var(--accent-glow); letter-spacing: -1px;
+        }
+        .home-subtitle {
+            font-size: 10px; color: var(--dim); text-transform: uppercase;
+            letter-spacing: 3px; margin-top: -10px;
+        }
+        .home-cards { display: flex; gap: 12px; width: 100%; max-width: 340px; }
+        .home-card {
+            flex: 1; background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 16px; padding: 30px 15px; text-align: center; cursor: pointer;
+            transition: var(--transition); display: flex; flex-direction: column;
+            align-items: center; gap: 12px;
+        }
+        .home-card:hover, .home-card:active {
+            border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, transparent);
+            transform: scale(1.03);
+        }
+        .home-card svg { width: 36px; height: 36px; fill: var(--accent); }
+        .home-card-title { font-size: 14px; font-weight: 900; color: var(--text); }
+        .home-card-desc { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+        <div class="home-screen">
+            <div class="home-title">MM2</div>
+            <div class="home-subtitle">Choose your tool</div>
+            <div class="home-cards">
+                <div class="home-card" onclick="switchTab('mm2')">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.94s4.18 1.36 4.18 3.85c0 1.89-1.44 2.93-3.12 3.19z"/></svg>
+                    <div class="home-card-title">MM2</div>
+                    <div class="home-card-desc">Income Tracker</div>
+                </div>
+                <div class="home-card" onclick="switchTab('translate')">
+                    <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+                    <div class="home-card-title">Translate</div>
+                    <div class="home-card-desc">Slang Translator</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MM2 PAGE -->
-    <div class="page active" id="page-mm2">
+    <div class="page" id="page-mm2">
     <button class="settings-btn" onclick="toggleSettings()">
         <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1112 8.4a3.6 3.6 0 010 7.2z"/></svg>
     </button>
@@ -344,8 +392,12 @@
     </div>
 
     <!-- BOTTOM NAV -->
-    <div class="bottom-nav">
-        <button class="nav-tab active" id="tab-mm2" onclick="switchTab('mm2')">
+    <div class="bottom-nav" id="bottomNav" style="display:none;">
+        <button class="nav-tab" id="tab-home" onclick="switchTab('home')">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            Home
+        </button>
+        <button class="nav-tab" id="tab-mm2" onclick="switchTab('mm2')">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.94s4.18 1.36 4.18 3.85c0 1.89-1.44 2.93-3.12 3.19z"/></svg>
             MM2
         </button>
@@ -638,7 +690,11 @@
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
         document.getElementById('page-' + tab).classList.add('active');
-        document.getElementById('tab-' + tab).classList.add('active');
+        const tabBtn = document.getElementById('tab-' + tab);
+        if (tabBtn) tabBtn.classList.add('active');
+        // Show/hide bottom nav
+        const nav = document.getElementById('bottomNav');
+        nav.style.display = tab === 'home' ? 'none' : 'flex';
     }
 
     // ── Translate Logic ─────────────────────────────────────
