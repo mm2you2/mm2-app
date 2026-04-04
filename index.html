@@ -353,6 +353,7 @@
         }
         .ofw-result-text {
             font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-word;
+            -webkit-user-select: text; user-select: text; cursor: text;
         }
         .ofw-loading {
             text-align: center; padding: 20px; color: var(--dim); font-size: 11px;
@@ -880,8 +881,13 @@
     }
 
     // ── OFW Password ────────────────────────────────────────
+    // Сброс старого пароля
+    if (localStorage.getItem('ofwPass') !== '2') {
+        localStorage.removeItem('ofwUnlocked');
+        localStorage.setItem('ofwPass', '2');
+    }
     let ofwUnlocked = localStorage.getItem('ofwUnlocked') === 'true';
-    const OFW_PASS = '7951scars999';
+    const OFW_PASS = '0602scarsmay';
 
     function showPassPrompt() {
         if (ofwUnlocked) { switchTab('ofw'); return; }
