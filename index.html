@@ -308,13 +308,70 @@
 
         /* OFW Admin */
         .ofw-admin {
-            padding: 20px 0;
+            padding: 15px 0;
         }
         .ofw-admin-title {
             text-align: center; font-size: 12px; font-weight: 900; color: var(--accent);
-            text-transform: uppercase; letter-spacing: 3px; margin-bottom: 20px;
+            text-transform: uppercase; letter-spacing: 3px; margin-bottom: 15px;
             text-shadow: var(--accent-glow);
         }
+        .ofw-section {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+            padding: 15px; margin: 0 15px 12px;
+        }
+        .ofw-section-title {
+            font-size: 9px; font-weight: 900; color: var(--dim); text-transform: uppercase;
+            letter-spacing: 1.5px; margin-bottom: 10px;
+        }
+        .ofw-textarea {
+            width: 100%; min-height: 120px; padding: 12px; border-radius: 10px;
+            border: 1px solid var(--border); background: rgba(255,255,255,0.03);
+            color: var(--text); font-size: 13px; line-height: 1.5; resize: vertical;
+            outline: none; font-family: inherit; transition: var(--transition);
+        }
+        .ofw-textarea:focus { border-color: var(--accent); box-shadow: var(--accent-glow); }
+        .ofw-textarea::placeholder { color: var(--dim); font-size: 11px; }
+        .ofw-btn-row { display: flex; gap: 8px; margin-top: 10px; }
+        .ofw-btn {
+            flex: 1; padding: 12px; border-radius: 10px; border: none;
+            font-weight: 900; font-size: 11px; text-transform: uppercase;
+            cursor: pointer; transition: var(--transition); letter-spacing: 1px;
+        }
+        .ofw-btn-primary { background: var(--accent); color: var(--bg); }
+        .ofw-btn-primary:hover { opacity: 0.9; }
+        .ofw-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+        .ofw-btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--dim); }
+        .ofw-btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+        .ofw-result {
+            margin: 0 15px 12px; background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 14px; padding: 15px; display: none;
+        }
+        .ofw-result.visible { display: block; }
+        .ofw-result-label {
+            font-size: 9px; font-weight: 900; color: var(--accent); text-transform: uppercase;
+            letter-spacing: 1.5px; margin-bottom: 8px;
+        }
+        .ofw-result-text {
+            font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-word;
+        }
+        .ofw-loading {
+            text-align: center; padding: 20px; color: var(--dim); font-size: 11px;
+            text-transform: uppercase; letter-spacing: 2px; animation: pulse 1.5s infinite;
+        }
+        .ofw-history { margin: 0 15px 12px; }
+        .ofw-history-title {
+            font-size: 9px; font-weight: 900; color: var(--dim); text-transform: uppercase;
+            letter-spacing: 1.5px; margin-bottom: 8px;
+        }
+        .ofw-history-item {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+            padding: 10px 12px; margin-bottom: 6px; cursor: pointer; transition: var(--transition);
+        }
+        .ofw-history-item:hover { border-color: var(--accent); }
+        .ofw-history-item .ofw-h-preview {
+            font-size: 11px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .ofw-history-item .ofw-h-time { font-size: 9px; color: var(--dim); margin-top: 3px; }
     </style>
 </head>
 <body>
@@ -359,7 +416,24 @@
     <!-- OFW PAGE -->
     <div class="page" id="page-ofw">
         <div class="ofw-admin">
-            <div class="ofw-admin-title">OFW Admin Panel</div>
+            <div class="ofw-admin-title">OFW Chat Analyzer</div>
+            <div class="ofw-section">
+                <div class="ofw-section-title">Paste chat or describe situation</div>
+                <textarea class="ofw-textarea" id="ofwInput" placeholder="Paste fan's messages, describe the situation, fan's fetishes, buying power, what you want to sell..."></textarea>
+                <div class="ofw-btn-row">
+                    <button class="ofw-btn ofw-btn-secondary" onclick="ofwClear()">Clear</button>
+                    <button class="ofw-btn ofw-btn-primary" id="ofwAnalyzeBtn" onclick="ofwAnalyze()">Analyze</button>
+                    <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyResult()">Copy</button>
+                </div>
+            </div>
+            <div class="ofw-result" id="ofwResult">
+                <div class="ofw-result-label">Result</div>
+                <div class="ofw-result-text" id="ofwResultText"></div>
+            </div>
+            <div class="ofw-history" id="ofwHistory" style="display:none;">
+                <div class="ofw-history-title">History</div>
+                <div id="ofwHistoryList"></div>
+            </div>
         </div>
     </div>
 
@@ -803,6 +877,88 @@
             setTimeout(() => inp.classList.remove('wrong'), 400);
             inp.value = '';
         }
+    }
+
+    // ── OFW Chat Analyzer ───────────────────────────────────
+    const ofwHistory = [];
+
+    async function ofwAnalyze() {
+        const input = document.getElementById('ofwInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const btn = document.getElementById('ofwAnalyzeBtn');
+        const resultDiv = document.getElementById('ofwResult');
+        const resultText = document.getElementById('ofwResultText');
+
+        btn.disabled = true;
+        btn.textContent = '...';
+        resultDiv.classList.add('visible');
+        resultText.innerHTML = '<div class="ofw-loading">Analyzing...</div>';
+
+        try {
+            const resp = await fetch(API_URL + '/api/ofw/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, password: OFW_PASS })
+            });
+            const data = await resp.json();
+            if (data.error) {
+                resultText.textContent = 'Error: ' + data.error;
+            } else {
+                resultText.textContent = data.result;
+                ofwAddHistory(text, data.result);
+            }
+        } catch (e) {
+            resultText.textContent = 'Connection error';
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Analyze';
+    }
+
+    function ofwClear() {
+        document.getElementById('ofwInput').value = '';
+        document.getElementById('ofwResult').classList.remove('visible');
+    }
+
+    function ofwCopyResult() {
+        const text = document.getElementById('ofwResultText').textContent;
+        if (text && text !== 'Analyzing...' && text !== 'Connection error') {
+            const pasteMatch = text.match(/💬 PASTE:([\s\S]*?)(?=🎯 STRATEGY:|💰 TARGET:|$)/);
+            const toCopy = pasteMatch ? pasteMatch[1].trim() : text;
+            navigator.clipboard.writeText(toCopy);
+            const btns = document.querySelectorAll('.ofw-btn-row .ofw-btn-secondary');
+            const copyBtn = btns[btns.length - 1];
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+        }
+    }
+
+    function ofwAddHistory(input, result) {
+        const now = new Date();
+        const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+        ofwHistory.unshift({ input, result, time });
+        if (ofwHistory.length > 10) ofwHistory.pop();
+        ofwRenderHistory();
+    }
+
+    function ofwRenderHistory() {
+        const section = document.getElementById('ofwHistory');
+        const list = document.getElementById('ofwHistoryList');
+        section.style.display = 'block';
+        list.innerHTML = ofwHistory.map((h, i) => {
+            const preview = h.input.substring(0, 60) + (h.input.length > 60 ? '...' : '');
+            return '<div class="ofw-history-item" onclick="ofwLoadHistory('+i+')"><div class="ofw-h-preview">'+preview+'</div><div class="ofw-h-time">'+h.time+'</div></div>';
+        }).join('');
+    }
+
+    function ofwLoadHistory(index) {
+        const h = ofwHistory[index];
+        if (!h) return;
+        document.getElementById('ofwInput').value = h.input;
+        document.getElementById('ofwResultText').textContent = h.result;
+        document.getElementById('ofwResult').classList.add('visible');
     }
 
     // ── Translate Logic ─────────────────────────────────────
