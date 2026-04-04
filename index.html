@@ -372,6 +372,18 @@
             font-size: 11px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .ofw-history-item .ofw-h-time { font-size: 9px; color: var(--dim); margin-top: 3px; }
+        .ofw-img-preview {
+            width: 70px; height: 70px; border-radius: 8px; object-fit: cover;
+            border: 1px solid var(--border); cursor: pointer; transition: var(--transition);
+        }
+        .ofw-img-preview:hover { border-color: var(--accent); }
+        .ofw-img-remove {
+            position: absolute; top: -4px; right: -4px; width: 18px; height: 18px;
+            background: var(--red, #ff4d4d); border: none; border-radius: 50%; color: #fff;
+            font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            line-height: 1;
+        }
+        .ofw-img-wrap { position: relative; display: inline-block; }
     </style>
 </head>
 <body>
@@ -418,20 +430,29 @@
         <div class="ofw-admin">
             <div class="ofw-admin-title">OFW Chat Analyzer</div>
             <div class="ofw-section">
-                <div class="ofw-section-title">Paste chat or describe situation</div>
-                <textarea class="ofw-textarea" id="ofwInput" placeholder="Paste fan's messages, describe the situation, fan's fetishes, buying power, what you want to sell..."></textarea>
+                <div class="ofw-section-title">Вставь чат или опиши ситуацию</div>
+                <textarea class="ofw-textarea" id="ofwInput" placeholder="Вставь сообщения фана, опиши ситуацию, фетиши, buying power, что хочешь продать..."></textarea>
+
+                <div class="ofw-img-area" id="ofwImgArea" style="display:none; margin-top:10px;">
+                    <div style="display:flex; flex-wrap:wrap; gap:6px;" id="ofwImgPreviews"></div>
+                </div>
+
                 <div class="ofw-btn-row">
-                    <button class="ofw-btn ofw-btn-secondary" onclick="ofwClear()">Clear</button>
-                    <button class="ofw-btn ofw-btn-primary" id="ofwAnalyzeBtn" onclick="ofwAnalyze()">Analyze</button>
-                    <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyResult()">Copy</button>
+                    <button class="ofw-btn ofw-btn-secondary" onclick="ofwClear()">Очистить</button>
+                    <label class="ofw-btn ofw-btn-secondary" style="text-align:center; cursor:pointer;">
+                        📷 Скрин
+                        <input type="file" id="ofwFileInput" accept="image/*" multiple style="display:none;" onchange="ofwHandleFiles(this.files)">
+                    </label>
+                    <button class="ofw-btn ofw-btn-primary" id="ofwAnalyzeBtn" onclick="ofwAnalyze()">Анализ</button>
+                    <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyResult()">Копировать</button>
                 </div>
             </div>
             <div class="ofw-result" id="ofwResult">
-                <div class="ofw-result-label">Result</div>
+                <div class="ofw-result-label">Результат</div>
                 <div class="ofw-result-text" id="ofwResultText"></div>
             </div>
             <div class="ofw-history" id="ofwHistory" style="display:none;">
-                <div class="ofw-history-title">History</div>
+                <div class="ofw-history-title">История</div>
                 <div id="ofwHistoryList"></div>
             </div>
         </div>
@@ -881,11 +902,39 @@
 
     // ── OFW Chat Analyzer ───────────────────────────────────
     const ofwHistory = [];
+    let ofwImages = []; // base64 strings
+
+    function ofwHandleFiles(files) {
+        for (const file of files) {
+            if (!file.type.startsWith('image/')) continue;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                ofwImages.push(e.target.result);
+                ofwRenderPreviews();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function ofwRenderPreviews() {
+        const area = document.getElementById('ofwImgArea');
+        const container = document.getElementById('ofwImgPreviews');
+        if (ofwImages.length === 0) { area.style.display = 'none'; return; }
+        area.style.display = 'block';
+        container.innerHTML = ofwImages.map((img, i) =>
+            '<div class="ofw-img-wrap"><img src="'+img+'" class="ofw-img-preview"><button class="ofw-img-remove" onclick="ofwRemoveImg('+i+')">×</button></div>'
+        ).join('');
+    }
+
+    function ofwRemoveImg(index) {
+        ofwImages.splice(index, 1);
+        ofwRenderPreviews();
+    }
 
     async function ofwAnalyze() {
         const input = document.getElementById('ofwInput');
         const text = input.value.trim();
-        if (!text) return;
+        if (!text && ofwImages.length === 0) return;
 
         const btn = document.getElementById('ofwAnalyzeBtn');
         const resultDiv = document.getElementById('ofwResult');
@@ -894,44 +943,51 @@
         btn.disabled = true;
         btn.textContent = '...';
         resultDiv.classList.add('visible');
-        resultText.innerHTML = '<div class="ofw-loading">Analyzing...</div>';
+        resultText.innerHTML = '<div class="ofw-loading">Анализирую...</div>';
 
         try {
+            const body = { password: OFW_PASS };
+            if (text) body.text = text;
+            if (ofwImages.length > 0) body.images = ofwImages;
+
             const resp = await fetch(API_URL + '/api/ofw/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, password: OFW_PASS })
+                body: JSON.stringify(body)
             });
             const data = await resp.json();
             if (data.error) {
-                resultText.textContent = 'Error: ' + data.error;
+                resultText.textContent = 'Ошибка: ' + data.error;
             } else {
                 resultText.textContent = data.result;
-                ofwAddHistory(text, data.result);
+                ofwAddHistory(text || '[скриншот]', data.result);
             }
         } catch (e) {
-            resultText.textContent = 'Connection error';
+            resultText.textContent = 'Ошибка соединения';
         }
 
         btn.disabled = false;
-        btn.textContent = 'Analyze';
+        btn.textContent = 'Анализ';
     }
 
     function ofwClear() {
         document.getElementById('ofwInput').value = '';
         document.getElementById('ofwResult').classList.remove('visible');
+        ofwImages = [];
+        ofwRenderPreviews();
+        document.getElementById('ofwFileInput').value = '';
     }
 
     function ofwCopyResult() {
         const text = document.getElementById('ofwResultText').textContent;
-        if (text && text !== 'Analyzing...' && text !== 'Connection error') {
-            const pasteMatch = text.match(/💬 PASTE:([\s\S]*?)(?=🎯 STRATEGY:|💰 TARGET:|$)/);
+        if (text && text !== 'Анализирую...' && text !== 'Ошибка соединения') {
+            const pasteMatch = text.match(/💬 PASTE:([\s\S]*?)(?=🎯|💰|$)/);
             const toCopy = pasteMatch ? pasteMatch[1].trim() : text;
             navigator.clipboard.writeText(toCopy);
             const btns = document.querySelectorAll('.ofw-btn-row .ofw-btn-secondary');
             const copyBtn = btns[btns.length - 1];
-            copyBtn.textContent = 'Copied!';
-            setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+            copyBtn.textContent = 'Скопировано!';
+            setTimeout(() => copyBtn.textContent = 'Копировать', 1500);
         }
     }
 
