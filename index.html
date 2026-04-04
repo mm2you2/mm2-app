@@ -454,6 +454,7 @@
                 <div class="ofw-result-text" id="ofwResultText"></div>
                 <div class="ofw-btn-row" style="margin-top:10px;">
                     <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyPaste()">Копировать пасту</button>
+                    <button class="ofw-btn ofw-btn-primary" id="ofwMoreBtn" onclick="ofwMore()">Ещё</button>
                     <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyAll()">Копировать всё</button>
                 </div>
             </div>
@@ -1002,6 +1003,39 @@
         ofwImages = [];
         ofwRenderPreviews();
         document.getElementById('ofwFileInput').value = '';
+    }
+
+    async function ofwMore() {
+        const prevResult = document.getElementById('ofwResultText').textContent;
+        const origInput = document.getElementById('ofwInput').value.trim();
+        if (!prevResult) return;
+
+        const btn = document.getElementById('ofwMoreBtn');
+        const resultText = document.getElementById('ofwResultText');
+
+        btn.disabled = true;
+        btn.textContent = '...';
+
+        const morePrompt = "Контекст запроса: " + origInput + "\n\nПредыдущий ответ:\n" + prevResult + "\n\nНапиши ПРОДОЛЖЕНИЕ — следующую пасту для этого же чата. Что отправить дальше после предыдущего сообщения? Новая паста, новый апсейл, следующий шаг воронки. Формат тот же.";
+
+        try {
+            const resp = await fetch(API_URL + '/api/ofw/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: morePrompt, password: OFW_PASS })
+            });
+            const data = await resp.json();
+            if (data.error) {
+                resultText.textContent = prevResult + '\n\n───────────────\n\nОшибка: ' + data.error;
+            } else {
+                resultText.textContent = prevResult + '\n\n───────────────\n\n' + data.result;
+            }
+        } catch (e) {
+            resultText.textContent = prevResult + '\n\n───────────────\n\nОшибка соединения';
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Ещё';
     }
 
     function ofwCopyPaste() {
