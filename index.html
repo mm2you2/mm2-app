@@ -447,12 +447,15 @@
                 <div class="ofw-btn-row">
                     <button class="ofw-btn ofw-btn-secondary" onclick="ofwClear()">Очистить</button>
                     <button class="ofw-btn ofw-btn-primary" id="ofwAnalyzeBtn" onclick="ofwAnalyze()">Анализ</button>
-                    <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyResult()">Копировать</button>
                 </div>
             </div>
             <div class="ofw-result" id="ofwResult">
                 <div class="ofw-result-label">Результат</div>
                 <div class="ofw-result-text" id="ofwResultText"></div>
+                <div class="ofw-btn-row" style="margin-top:10px;">
+                    <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyPaste()">Копировать пасту</button>
+                    <button class="ofw-btn ofw-btn-secondary" onclick="ofwCopyAll()">Копировать всё</button>
+                </div>
             </div>
             <div class="ofw-history" id="ofwHistory" style="display:none;">
                 <div class="ofw-history-title">История</div>
@@ -907,6 +910,26 @@
     const ofwHistory = [];
     let ofwImages = []; // base64 strings
 
+    // Ctrl+V вставка картинок
+    document.addEventListener('paste', function(e) {
+        // Только на OFW странице
+        if (!document.getElementById('page-ofw').classList.contains('active')) return;
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        for (const item of items) {
+            if (item.type.startsWith('image/')) {
+                e.preventDefault();
+                const file = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    ofwImages.push(ev.target.result);
+                    ofwRenderPreviews();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    });
+
     function ofwHandleFiles(files) {
         for (const file of files) {
             if (!file.type.startsWith('image/')) continue;
@@ -981,17 +1004,22 @@
         document.getElementById('ofwFileInput').value = '';
     }
 
-    function ofwCopyResult() {
+    function ofwCopyPaste() {
         const text = document.getElementById('ofwResultText').textContent;
-        if (text && text !== 'Анализирую...' && text !== 'Ошибка соединения') {
-            const pasteMatch = text.match(/💬 PASTE:([\s\S]*?)(?=🎯|💰|$)/);
-            const toCopy = pasteMatch ? pasteMatch[1].trim() : text;
-            navigator.clipboard.writeText(toCopy);
-            const btns = document.querySelectorAll('.ofw-btn-row .ofw-btn-secondary');
-            const copyBtn = btns[btns.length - 1];
-            copyBtn.textContent = 'Скопировано!';
-            setTimeout(() => copyBtn.textContent = 'Копировать', 1500);
-        }
+        if (!text || text === 'Анализирую...' || text === 'Ошибка соединения') return;
+        const pasteMatch = text.match(/💬 PASTE:([\s\S]*?)(?=🎯|💰|$)/);
+        const toCopy = pasteMatch ? pasteMatch[1].trim() : text;
+        navigator.clipboard.writeText(toCopy);
+        event.target.textContent = 'Скопировано!';
+        setTimeout(() => event.target.textContent = 'Копировать пасту', 1500);
+    }
+
+    function ofwCopyAll() {
+        const text = document.getElementById('ofwResultText').textContent;
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        event.target.textContent = 'Скопировано!';
+        setTimeout(() => event.target.textContent = 'Копировать всё', 1500);
     }
 
     function ofwAddHistory(input, result) {
